@@ -95,25 +95,23 @@ class Network:
         std_out_str : float
             The standard deviation of the nodes' out-strength in the graph.
         """
-        in_str = []
+        in_str, out_str = [], []
         for i in range(len(self._labels)):
-            tmp = 0.0
+            tmp_in, tmp_out = 0.0, 0.0
             for j in range(len(self._labels)):
                 if j != i:
-                    tmp += self._edges[i][j]
-            if tmp > 0.0:
-                in_str.append(tmp)
+                    tmp_in += self._edges[i][j]
+                    tmp_out += self._edges[j][i]
+            if tmp_in > 0.0 or tmp_out > 0.0:
+                in_str.append(tmp_in)
+                out_str.append(tmp_out)
+
+        if (np.mean(in_str) - np.mean(out_str)) / np.mean(in_str) > 0.01:
+            print("Warning: in- and out- mean strength are different: "
+                f"{np.mean(in_str)} != {np.mean(out_str)}")
+
         mean_str = np.mean(in_str)
         std_in_str = np.std(in_str)
-
-        out_str = []
-        for i in range(len(self._labels)):
-            tmp = 0.0
-            for j in range(len(self._labels)):
-                if j != i:
-                    tmp += self._edges.T[i][j]
-            if tmp > 0.0:
-                out_str.append(tmp)
         std_out_str = np.std(out_str)
 
         return mean_str, std_in_str, std_out_str
@@ -134,31 +132,84 @@ class Network:
         std_out_deg : float
             The standard deviation of the nodes' out-degree in the graph.
         """
-        in_deg = []
+        in_deg, out_deg = [], []
         for i in range(len(self._labels)):
-            tmp = 0.0
+            tmp_in, tmp_out = 0, 0
             for j in range(len(self._labels)):
                 if self._edges[i][j] > 0 and j != i:
-                    tmp += 1
-            if tmp > 0.0:
-                in_deg.append(tmp)
+                    tmp_in += 1
+                if self._edges[j][i] > 0 and j != i:
+                    tmp_out += 1
+            if tmp_in > 0 or tmp_out > 0:
+                in_deg.append(tmp_in)
+                out_deg.append(tmp_out)
+
+        if np.mean(in_deg) != np.mean(out_deg):
+            print("Warning: in- and out- mean degrees are different: "
+                f"{np.mean(in_deg)} != {np.mean(out_deg)}")
+
         mean_deg = np.mean(in_deg)
         std_in_deg = np.std(in_deg)
-
-        tmp_out_deg = []
-        for i in range(len(self._labels)):
-            tmp = 0.0
-            for j in range(len(self._labels)):
-                if self._edges.T[i][j] > 0 and j != i:
-                    tmp += 1
-            if tmp > 0.0:
-                tmp_out_deg.append(tmp)
-        out_deg = np.array([deg for deg in tmp_out_deg if deg > 0.0])
         std_out_deg = np.std(out_deg)
 
         return mean_deg, std_in_deg, std_out_deg
 
-    def mean_cc(self, thr) -> float:
+    def partial_mean_deg(
+        self,
+        critical_size: int,
+    ) -> Tuple[float, float]:
+        """Computes the partial (undirected) degrees of the graph.
+
+        Arguments
+        ---------
+
+        critical_size : int
+            Distinguish between the mean degree for the sizes below and
+            above the critical_size.
+
+        Returns
+        -------
+
+        mean_deg_small : float
+            The mean of the nodes' degree in the graph, for the sizes
+            smaller than the critical size.
+
+        mean_deg_large : float
+            The mean of the nodes' degree in the graph, for the sizes
+            larger than the critical size.
+        """
+        deg_small, deg_large = [], []
+        for i in range(len(self._labels)):
+            tmp = 0
+            for j in range(len(self._labels)):
+                if j != i:
+                    # +0.5 so that it is consistent with the directed averages
+                    if self._edges[i][j] > 0:
+                        tmp += 0.5
+                    if self._edges[j][i] > 0:
+                        tmp += 0.5
+            if tmp > 0 and i <= critical_size - 1:
+                deg_small.append(tmp)
+            elif tmp > 0 and i > critical_size - 1:
+                deg_large.append(tmp)
+
+        if len(deg_small) > 0:
+            mean_deg_small = np.mean(deg_small)
+        else:
+            mean_deg_small = 0.0
+
+        if len(deg_large) > 0:
+            mean_deg_large = np.mean(deg_large)
+        else:
+            mean_deg_large = 0.0
+
+        return mean_deg_small, mean_deg_large
+
+    def mean_cc(
+        self,
+        thr: float,
+        critical_size: int,
+    ) -> Tuple[float, float, float]:
         """Computes the average clustering coefficient.
 
         Parameters
@@ -175,33 +226,56 @@ class Network:
             The average clustering coefficient of the graph (it's a number
             between 0 -tree like graph- and 1 -fully connected graph-).
         """
-        if thr < 0.0:
-            print("clustering coefficient requires threshold >= 0.0.")
-            return 0.0
+        clustering_coefficients, sizes = [], []
 
-        clustering_coefficients = np.zeros(self._norm_edges.shape[0])
+        sym_matrix = self._norm_edges + self._norm_edges.T
 
-        for i, node in enumerate(self._norm_edges):
+        for i, node in enumerate(sym_matrix):
             neighbors = [j for j, value in enumerate(node)
                 if j != i and value > thr]
+            degree = len(neighbors)
 
-            if len(neighbors) < 2:
-                clustering_coefficients[i] = 0.0
+            if degree == 0:
+                continue
+            if degree == 1:
+                clustering_coefficients.append(0.0)
+                sizes.append(i + 1)
             else:
                 total_triangles = 0
-                for i, neigh_i in enumerate(neighbors):
-                    for _, neigh_j in enumerate(neighbors[i + 1:]):
-                        if self._norm_edges[neigh_i][neigh_j] > thr:
+                for j, neigh_j in enumerate(neighbors):
+                    for _, neigh_k in enumerate(neighbors[j + 1:]):
+                        if sym_matrix[neigh_j][neigh_k] > thr:
                             total_triangles += 1
-
-                degree = len(neighbors)
 
                 clustering_coefficient = \
                     2.0 * total_triangles / (degree * (degree - 1))
-                clustering_coefficients[i] = clustering_coefficient
+                # if clustering_coefficient > 1.0:
+                #     print(i + 1, degree, clustering_coefficient)
+                clustering_coefficients.append(clustering_coefficient)
+                sizes.append(i + 1)
 
-        mean_cl_coeff = np.sum(clustering_coefficients) / self._n_nodes
-        return mean_cl_coeff
+        if len(clustering_coefficients) > 0:
+            mean_cl_coeff = np.mean(clustering_coefficients)
+        else:
+            mean_cl_coeff = 0.0
+
+        cc_small_list = [value for i, value in enumerate(
+            clustering_coefficients) if sizes[i] <= critical_size]
+        cc_large_list = [value for i, value in enumerate(
+            clustering_coefficients) if sizes[i] > critical_size]
+
+        if len(cc_small_list) > 0:
+            cc_small = np.mean(cc_small_list)
+        else:
+            cc_small = 0.0
+
+        if len(cc_large_list):
+            cc_large = np.mean(cc_large_list)
+        else:
+            cc_large = 0.0
+
+        return mean_cl_coeff, cc_small, cc_large
+
 
     def dist_degrees(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """Computes the degree distribution of the graph.
@@ -546,6 +620,44 @@ class NetworkTimeseries:
 
         return list_deg, list_in_std, list_out_std
 
+
+    def compute_partial_deg(
+        self,
+        critical_size: int,
+    ) -> Tuple[np.ndarray, np.ndarray]:
+        """Computes the partial mean graph degree for the time-series.
+
+        Arguments
+        ---------
+
+        critical_size : int
+            Distinguish between the mean degree for the sizes below and
+            above the critical_size.
+
+        Returns
+        -------
+
+        deg_small_arr : np.ndarray of float of shape (n_steps,)
+            The mean node degree at each timestep, for the sizes smaller
+            than critical_size.
+
+        deg_large_arr : np.ndarray of float of shape (n_steps,)
+            The mean node degree at each timestep, for the sizes larger
+            than critical_size.
+        """
+        n_steps = len(self.time_series)
+        deg_small_arr = np.zeros(n_steps)
+        deg_large_arr = np.zeros(n_steps)
+
+        for i, net in enumerate(self.time_series):
+            mean_deg_small, mean_deg_large = net.partial_mean_deg(
+                critical_size)
+            deg_small_arr[i] = mean_deg_small
+            deg_large_arr[i] = mean_deg_large
+
+        return deg_small_arr, deg_large_arr
+
+
     def compute_mean_str(
         self
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
@@ -580,7 +692,11 @@ class NetworkTimeseries:
 
         return list_str, list_in_std, list_out_std
 
-    def compute_mean_cc(self, thr: float) -> np.ndarray:
+    def compute_mean_cc(
+        self,
+        thr: float,
+        critical_size: int,
+    ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Computes the mean clustering coefficient for the time-series.
 
         Parameters
@@ -596,14 +712,27 @@ class NetworkTimeseries:
         list_cc : np.ndarray of float of shape (n_steps,)
             The mean clustering coefficient at each timestep (it's a number
             between 0 -tree like graph- and 1 -fully connected graph-).
+
+        cc_small_arr : np.ndarray of float of shape (n_steps,)
+            The mean clustering coefficient at each timestep for the sizes
+            smaller than critical_size.
+
+        cc_large_arr : np.ndarray of float of shape (n_steps,)
+            The mean clustering coefficient at each timestep for the sizes
+            larger than critical_size.
         """
         n_steps = len(self.time_series)
         list_cc = np.zeros(n_steps)
+        cc_small_arr = np.zeros(n_steps)
+        cc_large_arr = np.zeros(n_steps)
 
         for i, net in enumerate(self.time_series):
-            list_cc[i] = net.mean_cc(thr)
+            list_cc[i], cc_small, cc_large = net.mean_cc(thr, critical_size)
+            cc_small_arr[i] = cc_small
+            cc_large_arr[i] = cc_large
 
-        return list_cc
+        return list_cc, cc_small_arr, cc_large_arr
+
 
     def compute_distances(self) -> Tuple[np.ndarray, np.ndarray]:
         """Computes the diameter and average distance between nodes.
