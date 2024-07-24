@@ -1,4 +1,4 @@
-"""Do the plots reading the output of the main."""
+"""Plots observables describing the graph along the time."""
 
 import numpy as np
 import matplotlib.pyplot as plt
