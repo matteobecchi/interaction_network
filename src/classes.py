@@ -249,8 +249,6 @@ class Network:
 
                 clustering_coefficient = \
                     2.0 * total_triangles / (degree * (degree - 1))
-                # if clustering_coefficient > 1.0:
-                #     print(i + 1, degree, clustering_coefficient)
                 clustering_coefficients.append(clustering_coefficient)
                 sizes.append(i + 1)
 
