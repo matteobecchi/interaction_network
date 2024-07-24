@@ -219,6 +219,10 @@ class Network:
             In computing the clustering coefficinet, only consider a link if
             its weigth is higher than thr.
 
+        critical_size : int
+            Distinguish between the mean clustering coefficient for the sizes
+            below and above the critical_size.
+
         Returns
         -------
 
@@ -692,15 +696,19 @@ class NetworkTimeseries:
 
     def compute_mean_cc(
         self,
-        thr: float,
         critical_size: int,
+        thr: float = 0.0,
     ) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         """Computes the mean clustering coefficient for the time-series.
 
         Parameters
         ----------
 
-        thr : float
+        critical_size : int
+            Distinguish between the mean clustering coefficient for the sizes
+            below and above the critical_size.
+
+        thr : float, default = 0.0
             In computing the clustering coefficinet, only consider a link if
             its weigth is higher than thr.
 

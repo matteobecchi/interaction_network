@@ -66,7 +66,7 @@ def run_analysis(
     np.save("output_data/strength.npy", array_str)
 
     clust_coeff, cc_small, cc_large = test_nts.compute_mean_cc(
-        CC_THR, critical_size=4)
+        critical_size=4)
     np.save("output_data/clust_coeff.npy", clust_coeff)
     array_partials = np.array([cc_small, cc_large])
     np.save("output_data/partial_cc.npy", array_partials)
