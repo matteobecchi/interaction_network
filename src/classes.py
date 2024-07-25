@@ -55,9 +55,11 @@ class Network:
                 n_nodes += 1
         self._n_nodes = n_nodes
 
+
     def get_n_nodes(self) -> int:
         """Returns the number of nodes in the graph."""
         return self._n_nodes
+
 
     def get_edges(self) -> np.ndarray:
         """Retruns a copy of the graph edges.
@@ -69,14 +71,17 @@ class Network:
         """
         return copy.deepcopy(self._edges)
 
+
     def print_graph(self):
         """Prints the graph in a matrix form."""
         print(self._edges)
+
 
     def print_norm_graph(self):
         """Prints the normalize graph in a matrix form."""
         np.set_printoptions(precision=2, suppress=False)
         print(self._norm_edges*100)
+
 
     def mean_str(self) -> Tuple[float, float, float]:
         """Computes the average strength of the graph.
@@ -116,6 +121,7 @@ class Network:
 
         return mean_str, std_in_str, std_out_str
 
+
     def mean_deg(self) -> Tuple[float, float, float]:
         """Computes the average degree of the graph.
 
@@ -153,6 +159,7 @@ class Network:
         std_out_deg = np.std(out_deg)
 
         return mean_deg, std_in_deg, std_out_deg
+
 
     def partial_mean_deg(
         self,
@@ -204,6 +211,7 @@ class Network:
             mean_deg_large = 0.0
 
         return mean_deg_small, mean_deg_large
+
 
     def mean_cc(
         self,
@@ -312,6 +320,7 @@ class Network:
 
         return deg_in, deg_out
 
+
     def dist_strengths(self, file_name: str) -> Tuple[np.ndarray, np.ndarray]:
         """Computes the strength distribution of the graph.
 
@@ -340,6 +349,7 @@ class Network:
         fig.savefig(file_name, dpi=600)
 
         return str_in, str_out
+
 
     def dist_cc(self, thr) -> np.ndarray:
         """Computes the clustering coefficient distribution.
@@ -381,6 +391,7 @@ class Network:
             clustering_coefficients[node] = clustering_coefficient
 
         return clustering_coefficients
+
 
     def plot(self, threshold: float, file_name: str):
         """Plots the graph using networkx.
@@ -425,6 +436,7 @@ class Network:
         plt.show()
         fig.savefig("output_figures/" + file_name + ".png", dpi=600)
 
+
     def bfs(self, start_node: int) -> dict:
         """Perform a breadth-first search from a node in the graph.
 
@@ -455,6 +467,7 @@ class Network:
                     queue.append(neigh)
 
         return distances
+
 
     def diameter_and_average_distance(self)->Tuple[int, float]:
         """Compute the diameter and average node distance.
@@ -540,21 +553,23 @@ class NetworkTimeseries:
         t_max: int = -1,
         n_steps: int = 1000,
         spacing: str = 'geo',
-        aver_window: int = 10,
+        aver_window: int = 100,
         n_plots: int = 10,
     ):
         data = np.load(data_directory)
         n_frames, n_particles = data.shape
         n_particles -= 1
         print(f"Particles: {n_particles}, frames: {n_frames}.")
+        data = data[:, 1:].T
 
         if t_max == -1:
             t_max = n_frames - 1
             print(f"t_max = {t_max}")
-        data = data[:, 1:].T
 
         if spacing == 'geo':
-            tmp_time_steps = np.geomspace(t_min, t_max, num=n_steps, dtype=int)
+            tmp_time_steps = np.geomspace(1, t_max - t_min + 1, num=n_steps,
+                dtype=int)
+            tmp_time_steps += t_min - 1
         elif spacing == 'lin':
             tmp_time_steps = np.linspace(t_min, t_max, num=n_steps, dtype=int)
         time_steps = [tmp_time_steps[0]]
@@ -693,6 +708,7 @@ class NetworkTimeseries:
             list_out_std[i] = out_str_std
 
         return list_str, list_in_std, list_out_std
+
 
     def compute_mean_cc(
         self,
