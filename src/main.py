@@ -3,8 +3,6 @@
 import numpy as np
 from classes import NetworkTimeseries
 
-CC_THR = 0.0 # Threshold for the clustering coefficient measure
-
 
 def run_analysis(
     data_dir: str,
