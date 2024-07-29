@@ -351,8 +351,9 @@ class Network:
         return str_in, str_out
 
 
-    def dist_cc(self, thr) -> np.ndarray:
-        """Computes the clustering coefficient distribution.
+    def dist_cc(self, thr: float) -> np.ndarray:
+        """THIS IS WRONG, HAS TO BE UPDATED.
+        Computes the clustering coefficient distribution.
 
         Parameters
         ----------
