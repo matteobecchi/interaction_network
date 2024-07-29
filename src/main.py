@@ -11,6 +11,7 @@ def run_analysis(
     spacing: str = 'geo',
     n_plots: int = 0,
     t_min: int = 1,
+    critical_size: int = 4,
 ):
     """
     Runs the analysis and print the results.
@@ -42,6 +43,7 @@ def run_analysis(
         aver_window=aver_window,
         n_plots=n_plots,
         t_min=t_min,
+        c_size=critical_size,
     )
 
     # test_nts.time_series[-1].print_norm_graph()
@@ -55,7 +57,7 @@ def run_analysis(
     array_deg = np.array([degrees, in_degrees_std, out_degrees_std])
     np.save("output_data/degrees.npy", array_deg)
 
-    deg_small, deg_large = test_nts.compute_partial_deg(critical_size=4)
+    deg_small, deg_large = test_nts.compute_partial_deg(critical_size=c_size)
     array_partials = np.array([deg_small, deg_large])
     np.save("output_data/partial_degrees.npy", array_partials)
 
@@ -64,7 +66,7 @@ def run_analysis(
     np.save("output_data/strength.npy", array_str)
 
     clust_coeff, cc_small, cc_large = test_nts.compute_mean_cc(
-        critical_size=4)
+        critical_size=c_size)
     np.save("output_data/clust_coeff.npy", clust_coeff)
     array_partials = np.array([cc_small, cc_large])
     np.save("output_data/partial_cc.npy", array_partials)

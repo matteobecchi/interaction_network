@@ -394,13 +394,13 @@ class Network:
         return clustering_coefficients
 
 
-    def plot(self, threshold: float, file_name: str):
+    def plot(self, thr: float, file_name: str):
         """Plots the graph using networkx.
 
         Parameters
         ----------
 
-        threshold : float
+        thr : float
             Ignore edges with a weight smaller than threshold.
 
         file_name : str
@@ -411,7 +411,7 @@ class Network:
                 {'weight': self._edges[i][j]})
             for i in range(self._n_nodes) for j in range(self._n_nodes)
             if self._labels[i] != self._labels[j] and
-            self._edges[i][j] > threshold
+            self._edges[i][j] > thr
         ]
 
         graph = nx.DiGraph()
