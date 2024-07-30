@@ -11,7 +11,7 @@ def run_analysis(
     spacing: str = 'geo',
     n_plots: int = 0,
     t_min: int = 1,
-    critical_size: int = 4,
+    c_size: int = 4,
 ):
     """
     Runs the analysis and print the results.
@@ -43,7 +43,7 @@ def run_analysis(
         aver_window=aver_window,
         n_plots=n_plots,
         t_min=t_min,
-        c_size=critical_size,
+        critical_size=c_size,
     )
 
     # test_nts.time_series[-1].print_norm_graph()
@@ -73,3 +73,6 @@ def run_analysis(
 
     diameter, mean_dist = test_nts.compute_distances()
     np.save("output_data/distances.npy", np.array([diameter, mean_dist]))
+
+    matrix_dist = test_nts.compute_matrix_dist()
+    np.save("output_data/matrix_dist.npy", matrix_dist)

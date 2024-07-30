@@ -556,6 +556,7 @@ class NetworkTimeseries:
         spacing: str = 'geo',
         aver_window: int = 100,
         n_plots: int = 10,
+        critical_size: int = 4,
     ):
         data = np.load(data_directory)
         n_frames, n_particles = data.shape
@@ -573,10 +574,12 @@ class NetworkTimeseries:
             tmp_time_steps += t_min - 1
         elif spacing == 'lin':
             tmp_time_steps = np.linspace(t_min, t_max, num=n_steps, dtype=int)
+
         time_steps = [tmp_time_steps[0]]
         for i in range(1, len(tmp_time_steps)):
             if tmp_time_steps[i] != tmp_time_steps[i - 1]:
                 time_steps.append(tmp_time_steps[i])
+
         plot_times = np.linspace(1, len(time_steps) - 1, num=n_plots,
             dtype=int)
         print("Plot at times: ", plot_times)
@@ -779,3 +782,14 @@ class NetworkTimeseries:
             list_mean_dist[i] = mean_dist
 
         return list_diam, list_mean_dist
+
+
+    def compute_matrix_dist(self) -> np.ndarray:
+        dists = np.zeros(len(self.time_series) - 1)
+
+        for i, _ in enumerate(self.time_series[1:]):
+            net_0 = self.time_series[i]._norm_edges
+            net_1 = self.time_series[i + 1]._norm_edges
+            dists[i] = np.linalg.norm(net_1 - net_0)
+
+        return dists
