@@ -35,6 +35,13 @@ def run_analysis(
 
     n_plots : int = 0
         Number of frames at which the gaphs are plotted.
+
+    t_min : int = 1
+        Minimum timestep to start the analysis from.
+
+    c_size : int = 4
+        Critical size dividing "short" and "long" polymers (critical
+        nucleation size). 
     """
     test_nts = NetworkTimeseries(
         data_directory=data_dir,
