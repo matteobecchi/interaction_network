@@ -1,7 +1,7 @@
 """Network analysis for the evolving system."""
 
 import numpy as np
-from classes import NetworkTimeseries
+from classes import NetworkTimeseries, NetworkAverage
 
 
 def run_analysis(
@@ -83,3 +83,32 @@ def run_analysis(
 
     matrix_dist = test_nts.compute_matrix_dist()
     np.save("output_data/matrix_dist.npy", matrix_dist)
+
+
+def run_equi_dist_analysis(
+    data_dir: str,
+    t_min: int = 1,
+):
+    """
+    Computes the equilibrium distributions and prints the results.
+
+    Arguments
+    ---------
+
+    data_dir : str
+        The file with the input data. File has to contain a matrix (N, T + 1),
+        where for every monomer is indicated the size of the polymer it is
+        contained in, at every simulation frame.
+
+    t_min : int = 1
+        Minimum timestep to start the analysis from.
+    """
+    test_nts = NetworkAverage(
+        data_directory=data_dir,
+        t_min=t_min,
+    )
+
+    test_nts.get_deg_centrality_distribution("output_figures/deg_centrality")
+    test_nts.get_h_index_centrality_distribution(
+        "output_figures/h_index_centrality"
+    )

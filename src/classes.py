@@ -506,6 +506,90 @@ class Network:
         return diameter, average_distance
 
 
+    def deg_centrality_dist(self)->Tuple[np.ndarray, np.ndarray]:
+        """Compute the degree centrality distribution.
+
+        Returns
+        -------
+
+        dc_dist_in : np.ndarray
+            The inward degree centrlity for each node in the graph.
+
+        dc_dist_out : np.ndarray
+            The outward degree centrlity for each node in the graph.
+        """
+
+        nodes_list = []
+        in_deg, out_deg = [], []
+        for i in range(len(self._labels)):
+            tmp_in, tmp_out = 0, 0
+            for j in range(len(self._labels)):
+                if self._edges[i][j] > 0 and j != i:
+                    tmp_in += 1
+                if self._edges[j][i] > 0 and j != i:
+                    tmp_out += 1
+            if tmp_in > 0 or tmp_out > 0:
+                nodes_list.append(i + 1)
+                in_deg.append(tmp_in)
+                out_deg.append(tmp_out)
+
+        dc_dist_in = np.array(in_deg) / (self._n_nodes - 1)
+        dc_dist_out = np.array(out_deg) / (self._n_nodes - 1)
+
+        return np.array(nodes_list), dc_dist_in, dc_dist_out
+
+
+    def h_index_centrality_dist(self)->Tuple[np.ndarray, np.ndarray]:
+        """Compute the degree centrality distribution.
+
+        Returns
+        -------
+
+        hc_dist_in : np.ndarray
+            The inward degree centrlity for each node in the graph.
+
+        hc_dist_out : np.ndarray
+            The outward degree centrlity for each node in the graph.
+        """
+
+        n_nodes = self._edges.shape[0]
+
+        degrees = np.count_nonzero(self._edges, axis=1)
+        h_indices_in = np.zeros(n_nodes, dtype=int)
+
+        for node in range(n_nodes):
+            neighbors = np.where(self._edges[node] > 0)[0]
+            neighbor_degrees = degrees[neighbors]
+            sorted_degrees = np.sort(neighbor_degrees)[::-1]
+            h_index = 0
+            for i, degree in enumerate(sorted_degrees):
+                if degree >= i + 1:
+                    h_index = i + 1
+                else:
+                    break
+
+            h_indices_in[node] = h_index
+
+
+        degrees = np.count_nonzero(self._edges.T, axis=1)
+        h_indices_out = np.zeros(n_nodes, dtype=int)
+
+        for node in range(n_nodes):
+            neighbors = np.where(self._edges.T[node] > 0)[0]
+            neighbor_degrees = degrees[neighbors]
+            sorted_degrees = np.sort(neighbor_degrees)[::-1]
+            h_index = 0
+            for i, degree in enumerate(sorted_degrees):
+                if degree >= i + 1:
+                    h_index = i + 1
+                else:
+                    break
+
+            h_indices_out[node] = h_index
+
+        return h_indices_in, h_indices_out
+
+
 class NetworkTimeseries:
     """Stores the evolution of the interaction network.
 
@@ -515,7 +599,7 @@ class NetworkTimeseries:
     data_directory : str
         The path to the input data file.
 
-    t_min : int, default = 0
+    t_min : int, default = 1
         At which timestep to start the analysis.
 
     t_max : int, default = -1
@@ -793,3 +877,89 @@ class NetworkTimeseries:
             dists[i] = np.linalg.norm(net_1 - net_0)
 
         return dists
+
+
+class NetworkAverage:
+    """Stores the average interaction network.
+
+    Parameters
+    ----------
+
+    data_directory : str
+        The path to the input data file.
+
+    t_min : int, default = 1
+        At which timestep to start the analysis.
+
+    t_max : int, default = -1
+        At which timestep to stop the analysis. If -1, use the entire
+        trajectory.
+
+    n_steps : int, default = 1000
+        How many graphs to average, linearly spaced along the
+        trajectory.
+
+    Arguments
+    ---------
+
+    aver_network : Network
+        This is the average interaction graph.
+    """
+
+    def __init__(
+        self,
+        data_directory: str,
+        t_min: int = 1,
+        t_max: int = -1,
+    ):
+        data = np.load(data_directory)
+        n_frames, n_particles = data.shape
+        n_particles -= 1
+        print(f"Particles: {n_particles}, frames: {n_frames}.")
+        data = data[:, 1:].T
+
+        if t_max == -1:
+            t_max = n_frames - 1
+            print(f"t_max = {t_max}")
+
+        max_size, list_of_edges = read_hex(
+            data,
+            t_max - t_min,
+            [t_max],
+        )
+
+        tmp_net = Network(t_min, list_of_edges[0], max_size)
+        self.aver_network = tmp_net
+
+
+    def get_deg_centrality_distribution(self, fig_path: str):
+        nodes, dc_in, dc_out = self.aver_network.deg_centrality_dist()
+
+        save_array = np.array([nodes, dc_in, dc_out])
+        np.save("output_data/degree_centrality.npy", save_array)
+
+        fig, ax = plt.subplots()
+        ax.plot(nodes, dc_in, label="Inward", marker='o', ms=2)
+        ax.plot(nodes, dc_out, label="Outward", marker='o', ms=2)
+        ax.set_xlabel("Polymer size")
+        ax.set_ylabel("Degree centrality")
+        ax.legend()
+        plt.show()
+        fig.savefig(f"{fig_path}.png", dpi=600)
+
+
+    def get_h_index_centrality_distribution(self, fig_path: str):
+        h_in, h_out = self.aver_network.h_index_centrality_dist()
+        node_labels = range(1, h_in.size + 1)
+
+        save_array = np.array([node_labels, h_in, h_out])
+        np.save("output_data/h_index_centrality.npy", save_array)
+
+        fig, ax = plt.subplots()
+        ax.plot(node_labels, h_in, label="Inward", marker='o', ms=2)
+        ax.plot(node_labels, h_out, label="Outward", marker='o', ms=2)
+        ax.set_xlabel("Polymer size")
+        ax.set_ylabel("H-index centrality")
+        ax.legend()
+        plt.show()
+        fig.savefig(f"{fig_path}.png", dpi=600)
