@@ -932,34 +932,16 @@ class NetworkAverage:
         self.aver_network = tmp_net
 
 
-    def get_deg_centrality_distribution(self, fig_path: str):
+    def get_deg_centrality_distribution(self):
         nodes, dc_in, dc_out = self.aver_network.deg_centrality_dist()
 
         save_array = np.array([nodes, dc_in, dc_out])
         np.save("output_data/degree_centrality.npy", save_array)
 
-        fig, ax = plt.subplots()
-        ax.plot(nodes, dc_in, label="Inward", marker='o', ms=2)
-        ax.plot(nodes, dc_out, label="Outward", marker='o', ms=2)
-        ax.set_xlabel("Polymer size")
-        ax.set_ylabel("Degree centrality")
-        ax.legend()
-        plt.show()
-        fig.savefig(f"{fig_path}.png", dpi=600)
 
-
-    def get_h_index_centrality_distribution(self, fig_path: str):
+    def get_h_index_centrality_distribution(self):
         h_in, h_out = self.aver_network.h_index_centrality_dist()
         node_labels = range(1, h_in.size + 1)
 
         save_array = np.array([node_labels, h_in, h_out])
         np.save("output_data/h_index_centrality.npy", save_array)
-
-        fig, ax = plt.subplots()
-        ax.plot(node_labels, h_in, label="Inward", marker='o', ms=2)
-        ax.plot(node_labels, h_out, label="Outward", marker='o', ms=2)
-        ax.set_xlabel("Polymer size")
-        ax.set_ylabel("H-index centrality")
-        ax.legend()
-        plt.show()
-        fig.savefig(f"{fig_path}.png", dpi=600)

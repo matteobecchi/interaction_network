@@ -108,7 +108,5 @@ def run_equi_dist_analysis(
         t_min=t_min,
     )
 
-    test_nts.get_deg_centrality_distribution("output_figures/deg_centrality")
-    test_nts.get_h_index_centrality_distribution(
-        "output_figures/h_index_centrality"
-    )
+    test_nts.get_deg_centrality_distribution()
+    test_nts.get_h_index_centrality_distribution()
