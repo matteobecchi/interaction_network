@@ -103,10 +103,11 @@ def run_equi_dist_analysis(
     t_min : int = 1
         Minimum timestep to start the analysis from.
     """
-    test_nts = NetworkAverage(
+    aver_network = NetworkAverage(
         data_directory=data_dir,
         t_min=t_min,
     )
 
-    test_nts.get_deg_centrality_distribution()
-    test_nts.get_h_index_centrality_distribution()
+    aver_network.get_deg_centrality_distribution()
+    aver_network.get_h_index_centrality_distribution()
+    aver_network.get_closeness_centrality_distribution()

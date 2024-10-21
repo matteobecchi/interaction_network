@@ -310,12 +310,6 @@ class Network:
         mask_out = deg_out > 0
         axes[0].hist(deg_in[mask_in], bins=int(max(deg_in)))
         axes[1].hist(deg_out[mask_out], bins=int(max(deg_out)))
-        # axes[0].bar(range(1, tot_n_nodes + 1), deg_in)
-        # axes[1].bar(range(1, tot_n_nodes + 1), deg_out)
-        # axes[1].set_xlabel(r'Polymer size $i$')
-        # axes[0].set_ylabel(r'In-degree $k_i^{in}$')
-        # axes[1].set_ylabel(r'Out-degree $k_i^{out}$')
-        # plt.show()
         fig.savefig(file_name, dpi=600)
 
         return deg_in, deg_out
@@ -512,6 +506,9 @@ class Network:
         Returns
         -------
 
+        nodes_labels : np.ndarray
+            The list of the nodes' labels.
+
         dc_dist_in : np.ndarray
             The inward degree centrlity for each node in the graph.
 
@@ -588,6 +585,41 @@ class Network:
             h_indices_out[node] = h_index
 
         return h_indices_in, h_indices_out
+
+
+    def closeness_centrality_dist(self)->Tuple[np.ndarray, np.ndarray]:
+        """Compute the closeness centrality distribution.
+
+        Returns
+        -------
+
+        nodes_labels : np.ndarray
+            The list of the nodes' labels.
+
+        closeness_c_dist : np.ndarray
+            The inward degree centrlity for each node in the graph.
+        """
+
+        nodes_list = []
+        closeness_centr = []
+        for node in range(len(self._labels)):
+            distances = self.bfs(node)
+            connect_dists = np.array(
+                [d for d in distances.values() if d < float('inf')]
+            )
+            aver_distance = np.sum(connect_dists)
+            n_i = np.sum(connect_dists > 0)
+            if aver_distance > 0.0:
+                c_c = (n_i - 1)**2 / aver_distance
+
+            if np.any(connect_dists > 0):
+                nodes_list.append(node + 1)
+                closeness_centr.append(c_c)
+
+        closeness_c_dist = np.array(closeness_centr) / (
+            len(closeness_centr) - 1)
+
+        return np.array(nodes_list), closeness_c_dist
 
 
 class NetworkTimeseries:
@@ -945,3 +977,10 @@ class NetworkAverage:
 
         save_array = np.array([node_labels, h_in, h_out])
         np.save("output_data/h_index_centrality.npy", save_array)
+
+
+    def get_closeness_centrality_distribution(self):
+        nodes, cl_centr_dist = self.aver_network.closeness_centrality_dist()
+
+        save_array = np.array([nodes, cl_centr_dist])
+        np.save("output_data/closeness_centrality.npy", save_array)
