@@ -597,7 +597,7 @@ class Network:
             The list of the nodes' labels.
 
         closeness_c_dist : np.ndarray
-            The inward degree centrlity for each node in the graph.
+            The closeness centrlity for each node in the graph.
         """
 
         nodes_list = []
